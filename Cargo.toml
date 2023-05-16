@@ -2,4 +2,5 @@
 members = [
   "git-new",
   "i3-focus",
+  "tmux-session-name"
 ]
