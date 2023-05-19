@@ -21,23 +21,33 @@ fn main() {
 
     let abs_path = cmd_out("git", &["-C", &path, "rev-parse", "--absolute-git-dir"]);
     let top_path = cmd_out("git", &["-C", &path, "rev-parse", "--show-toplevel"]);
-    let is_bare = cmd_out("git", &["-C", &path, "rev-parse", "--is-bare-repository"]);
+    let is_bare = cmd_out("git", &["-C", &path, "rev-parse", "--is-bare-repository"]) == "true";
+    let branch_name = cmd_out("git", &["rev-parse", "--abbrev-ref", "HEAD"]);
 
     let path = if format!("{}/.git", top_path) == abs_path {
+        // simple git repo
         cmd_out("realpath", &[&top_path])
-    } else if is_bare == "true" {
+    } else if is_bare {
+        // main bare repo folder
         cmd_out("realpath", &[&abs_path])
     } else if abs_path != "" && top_path != "" {
+        // branch within bare repo
         cmd_out("realpath", &[&format!("{}/..", top_path)])
     } else {
         path.to_string()
     };
 
     let base_name = path.split("/").last().unwrap();
-    let clean_name = base_name.replace(|c: char| !c.is_alphabetic(), "_");
-    let name = format!("{}_{}", clean_name, result);
-
-    println!("{}", name);
+    let clean_name = base_name.replace(|c: char| !c.is_alphanumeric(), "_");
+    if branch_name != "" {
+        let clean_branch = branch_name.replace(|c: char| !c.is_alphanumeric(), "_");
+        println!(
+            "{}",
+            format!("{}_({})_[{}]", clean_name, clean_branch, result)
+        );
+    } else {
+        println!("{}", format!("{}_[{}]", clean_name, result));
+    }
 }
 
 fn cmd_out(cmd: &str, args: &[&str]) -> String {
