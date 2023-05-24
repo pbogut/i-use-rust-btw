@@ -22,7 +22,7 @@ fn main() {
     let abs_path = cmd_out("git", &["-C", &path, "rev-parse", "--absolute-git-dir"]);
     let top_path = cmd_out("git", &["-C", &path, "rev-parse", "--show-toplevel"]);
     let is_bare = cmd_out("git", &["-C", &path, "rev-parse", "--is-bare-repository"]) == "true";
-    let branch_name = cmd_out("git", &["rev-parse", "--abbrev-ref", "HEAD"]);
+    let branch_name = cmd_out("git", &["-C", &path, "rev-parse", "--abbrev-ref", "HEAD"]);
 
     let path = if format!("{}/.git", top_path) == abs_path {
         // simple git repo
