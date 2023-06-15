@@ -490,6 +490,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "tmux-kill-idle-sessions"
+version = "0.1.0"
+dependencies = [
+ "clap",
+]
+
+[[package]]
 name = "tmux-session-name"
 version = "0.1.0"
 dependencies = [

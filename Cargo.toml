@@ -3,5 +3,6 @@ members = [
   "git-new",
   "i3-focus",
   "nvru",
+  "tmux-kill-idle-sessions",
   "tmux-session-name"
 ]
