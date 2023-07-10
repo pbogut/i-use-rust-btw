@@ -2,6 +2,7 @@
 members = [
   "git-new",
   "i3-focus",
+  "i3-prop",
   "nvru",
   "tmux-kill-idle-sessions",
   "tmux-session-name"
