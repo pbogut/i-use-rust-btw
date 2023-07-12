@@ -1,0 +1,12 @@
+[package]
+name = "sway-focus"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = "4.3.11"
+i3-focus = { path = "../i3-focus" }
+swayipc = "3.0.1"
+swayipc-types = "1.3.0"
