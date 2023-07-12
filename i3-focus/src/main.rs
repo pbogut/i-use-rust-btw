@@ -1,17 +1,8 @@
-mod nvim;
-mod tmux;
-use clap::{arg, builder::PossibleValue, value_parser, Command, ValueEnum};
+use clap::{arg, value_parser, Command};
+use i3_focus::{nvim, tmux, Direction};
 use i3_ipc::{Connect, I3Stream, I3};
 use i3ipc_types::reply;
 use std::io;
-
-#[derive(Clone)]
-pub enum Direction {
-    Left,
-    Right,
-    Up,
-    Down,
-}
 
 fn cli() -> Command {
     Command::new("i3-focus")
@@ -36,10 +27,11 @@ fn main() -> io::Result<()> {
             let skip_vim = matches.get_flag("skip-nvim");
             let tmux_id = get_tmux_id(&name);
             let nvim_id = get_nvim_id(&name);
-            let tmux_edge = match tmux_id {
-                Some(id) => tmux::is_tmux_edge(id, direction),
-                None => false,
-            };
+            let tmux_edge = tmux_id.map_or(false, |id| tmux::is_tmux_edge(id, direction));
+            // let tmux_edge = match tmux_id {
+            //     Some(id) => tmux::is_tmux_edge(id, direction),
+            //     None => false,
+            // };
 
             match (nvim_id, skip_vim, tmux_id, tmux_edge) {
                 (Some(id), false, _, _) => handle_nvim(id, direction),
@@ -91,7 +83,7 @@ fn get_tmux_id(name: &str) -> Option<usize> {
 }
 
 fn get_nvim_id(name: &str) -> Option<usize> {
-    let mut p = name.split(":");
+    let mut p = name.split(':');
     match (p.nth(1), p.next()) {
         (Some("nvim"), Some(id)) => match id.parse() {
             Ok(id) => Some(id),
@@ -114,28 +106,4 @@ fn collect_focused<'a>(node: &'a reply::Node, mut r: Vec<&'a reply::Node>) -> Ve
 fn get_focused(node: &reply::Node) -> Vec<&reply::Node> {
     let v: Vec<&reply::Node> = vec![];
     collect_focused(node, v)
-}
-
-impl ValueEnum for Direction {
-    fn value_variants<'a>() -> &'a [Self] {
-        &[Self::Left, Self::Right, Self::Up, Self::Down]
-    }
-
-    fn to_possible_value<'a>(&self) -> Option<PossibleValue> {
-        Some(match self {
-            Self::Left => PossibleValue::new("left"),
-            Self::Right => PossibleValue::new("right"),
-            Self::Up => PossibleValue::new("up"),
-            Self::Down => PossibleValue::new("down"),
-        })
-    }
-}
-
-impl std::fmt::Display for Direction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.to_possible_value()
-            .expect("no values are skipped")
-            .get_name()
-            .fmt(f)
-    }
 }
