@@ -5,6 +5,7 @@ members = [
   "i3-prop",
   "nvru",
   "sway-focus",
+  "sway-workspace",
   "tmux-kill-idle-sessions",
   "tmux-session-name"
 ]
