@@ -16,6 +16,7 @@ fn cli() -> Command {
             arg!(--"move" "Move currently focused container"),
             arg!(--"send" "Sends currently focused container"),
             arg!(--"new" "Create new workspace"),
+            arg!(--"start-idx" <index> "Minimum index to start from when creating new workspace"),
         ])
 }
 
@@ -34,7 +35,10 @@ fn main() -> Result<(), swayipc::Error> {
     };
 
     if matches.get_flag("new") {
-        create_workspace(&mut sway, do_move, do_send)?;
+        let start_idx = matches
+            .get_one::<String>("start-idx")
+            .map_or(1, |idx| idx.parse().expect("Index has to be number"));
+        create_workspace(&mut sway, start_idx, do_move, do_send)?;
     } else {
         switch_workspace(&mut sway, &direction, do_move, do_send, same_output)?;
     }
@@ -99,6 +103,7 @@ fn switch_workspace(
 
 fn create_workspace(
     sway: &mut Connection,
+    start_idx: i32,
     do_move: bool,
     do_send: bool,
 ) -> Result<(), swayipc::Error> {
@@ -114,7 +119,7 @@ fn create_workspace(
         })
         .collect::<Vec<i32>>();
 
-    for new_num in 1..100 {
+    for new_num in start_idx..100 + start_idx {
         if !num_workspaces.contains(&new_num) {
             if do_move || do_send {
                 sway.run_command(format!("move container to workspace {new_num}"))?;
