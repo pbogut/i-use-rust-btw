@@ -1,4 +1,7 @@
-fn main() {
+use std::fs::File;
+use std::io::{Result, Write};
+
+fn main() -> Result<()> {
     let full_path = get_full_path();
 
     println!("New repository path: {}", full_path);
@@ -10,14 +13,11 @@ fn main() {
 
     mkdir_p(&full_path);
     cd(&full_path);
-    cmd("git", &["init", "--bare"]);
-    cmd("git", &["clone", ".", "init"]);
-    cd("init");
-    cmd("git", &["commit", "--allow-empty", "-m", "init"]);
-    cmd("git", &["push"]);
-    cd("..");
-    rm_fr("init");
-    cmd("git", &["worktree", "add", "master"]);
+    cmd("git", &["init", "--bare", ".bare"]);
+    File::create(".git")?.write_all(b"gitdir: ./.bare")?;
+    cmd("git", &["worktree", "add", "master", "--orphan"]);
+
+    Ok(())
 }
 
 fn cmd(cmd: &str, args: &[&str]) {
@@ -27,10 +27,6 @@ fn cmd(cmd: &str, args: &[&str]) {
 
 fn cd(path: &str) {
     std::env::set_current_dir(path).unwrap();
-}
-
-fn rm_fr(path: &str) {
-    std::fs::remove_dir_all(path).unwrap();
 }
 
 fn mkdir_p(path: &str) {
@@ -64,11 +60,5 @@ fn get_full_path() -> String {
 
     let (name, org, domain) = get_args();
 
-    let mut full_path = format!("{}/{}/{}/{}", dir, domain, org, name);
-
-    if !full_path.ends_with(".git") {
-        full_path.push_str(".git");
-    }
-
-    full_path
+    format!("{}/{}/{}/{}", dir, domain, org, name)
 }
