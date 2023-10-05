@@ -16,6 +16,14 @@ fn main() -> Result<()> {
     cmd("git", &["init", "--bare", ".bare"]);
     File::create(".git")?.write_all(b"gitdir: ./.bare")?;
     cmd("git", &["worktree", "add", "master", "--orphan"]);
+    cmd(
+        "git",
+        &[
+            "config",
+            "remote.origin.fetch",
+            "+refs/heads/*:refs/remotes/origin/*",
+        ],
+    );
 
     Ok(())
 }
