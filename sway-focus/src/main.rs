@@ -1,5 +1,5 @@
 use clap::{arg, value_parser, Command};
-use i3_focus::{nvim, tmux, Direction};
+use i3_focus::{nvim, tmux, zellij, Direction};
 use swayipc::Connection;
 use swayipc_types::Node;
 
@@ -24,19 +24,27 @@ fn main() {
     match get_focused_name(&mut sway) {
         Some(name) => {
             let skip_vim = matches.get_flag("skip-nvim");
-            let tmux_id = get_tmux_id(&name);
             let nvim_id = get_nvim_id(&name);
-            let tmux_edge = tmux_id.map_or(false, |id| tmux::is_tmux_edge(id, direction));
-            // let tmux_edge = match tmux_id {
-            //     Some(id) => tmux::is_tmux_edge(id, direction),
-            //     None => false,
-            // };
-
-            match (nvim_id, skip_vim, tmux_id, tmux_edge) {
-                (Some(id), false, _, _) => handle_nvim(id, direction),
-                (_, _, Some(id), false) => handle_tmux(id, direction),
-                _ => handle_sway(&mut sway, direction),
+            if nvim_id.is_some() && !skip_vim {
+                handle_nvim(nvim_id.unwrap_or_default(), direction);
+                return;
             }
+
+            let tmux_id = get_tmux_id(&name);
+            let tmux_edge = tmux_id.map_or(false, |id| tmux::is_tmux_edge(id, direction));
+            if tmux_id.is_some() && !tmux_edge {
+                handle_tmux(tmux_id.unwrap_or_default(), direction);
+                return;
+            }
+
+            let zellij_id = get_zellij_id(&name);
+            if zellij_id.is_some() {
+                if handle_zellij(&zellij_id.unwrap_or_default(), direction) {
+                    return;
+                }
+            }
+
+            handle_sway(&mut sway, direction);
         }
         None => handle_sway(&mut sway, direction),
     }
@@ -53,6 +61,10 @@ fn handle_nvim(id: usize, direction: &Direction) {
 
 fn handle_tmux(id: usize, direction: &Direction) {
     tmux::focus(id, direction);
+}
+
+fn handle_zellij(id: &str, direction: &Direction) -> bool {
+    zellij::focus(id, direction)
 }
 
 fn get_focused_name(sway: &mut Connection) -> Option<String> {
@@ -76,6 +88,16 @@ fn get_tmux_id(name: &str) -> Option<usize> {
             Err(_) => None,
         },
         None => None,
+    }
+}
+
+fn get_zellij_id(name: &str) -> Option<String> {
+    if name.starts_with("Zellij (") {
+        let start = name.find('(')?;
+        let end = name.find(')')?;
+        Some(name[start + 1..end].to_string())
+    } else {
+        None
     }
 }
 

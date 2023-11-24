@@ -2,6 +2,7 @@ use clap::{builder::PossibleValue, ValueEnum};
 
 pub mod nvim;
 pub mod tmux;
+pub mod zellij;
 
 #[derive(Clone)]
 pub enum Direction {
