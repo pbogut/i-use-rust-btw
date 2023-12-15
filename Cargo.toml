@@ -9,5 +9,6 @@ members = [
   "sway-prop",
   "sway-workspace",
   "tmux-kill-idle-sessions",
-  "tmux-session-name"
+  "tmux-session-name",
+  "zellij-session-name"
 ]
