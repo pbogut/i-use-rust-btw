@@ -114,6 +114,7 @@ fn to_full_path(repo: &str) -> String {
             .split("@")
             .last()
             .unwrap()
+            .trim_end_matches(".git")
             .to_lowercase();
 
         return dir + "/" + &path;
@@ -130,7 +131,7 @@ fn to_full_path(repo: &str) -> String {
         dir,
         domain.to_lowercase(),
         org.to_lowercase(),
-        name.to_lowercase()
+        name.trim_end_matches(".git").to_lowercase()
     )
 }
 
@@ -197,6 +198,24 @@ mod test {
         let result = to_repository_uri("me@mylab.com/someone/repo-name");
 
         assert_eq!(result, "me@mylab.com/someone/repo-name");
+    }
+
+    #[test]
+    fn test_getting_folder_from_repo_with_dot_git() {
+        let cwd = std::env::current_dir().unwrap();
+        let dir = std::env::var("PROJECTS").unwrap_or(cwd.to_str().unwrap().to_string());
+        let result = to_full_path("git@github.com/SomeOne/repo-name.git");
+
+        assert_eq!(result, dir + "/github.com/someone/repo-name");
+    }
+
+    #[test]
+    fn test_getting_folder_from_repo_with_known_and_dot_git() {
+        let cwd = std::env::current_dir().unwrap();
+        let dir = std::env::var("PROJECTS").unwrap_or(cwd.to_str().unwrap().to_string());
+        let result = to_full_path("https://github.com/SomeOne/repo-name.git");
+
+        assert_eq!(result, dir + "/github.com/someone/repo-name");
     }
 
     #[test]
