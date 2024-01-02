@@ -10,5 +10,6 @@ members = [
   "sway-workspace",
   "tmux-kill-idle-sessions",
   "tmux-session-name",
+  "wezterm-project",
   "zellij-session-name"
 ]
