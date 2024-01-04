@@ -1,5 +1,5 @@
 use clap::{arg, value_parser, Command};
-use i3_focus::{nvim, tmux, zellij, Direction};
+use i3_focus::{nvim, tmux, wezterm, zellij, Direction};
 use swayipc::Connection;
 use swayipc_types::Node;
 
@@ -28,6 +28,13 @@ fn main() {
             if nvim_id.is_some() && !skip_vim {
                 handle_nvim(nvim_id.unwrap_or_default(), direction);
                 return;
+            }
+
+            let wezterm_id = get_wezterm_id(&name);
+            if wezterm_id.is_some() {
+                if handle_wezterm(wezterm_id.unwrap_or_default(), direction) {
+                    return;
+                }
             }
 
             let tmux_id = get_tmux_id(&name);
@@ -63,6 +70,10 @@ fn handle_tmux(id: usize, direction: &Direction) {
     tmux::focus(id, direction);
 }
 
+fn handle_wezterm(id: usize, direction: &Direction) -> bool {
+    wezterm::focus(id, direction)
+}
+
 fn handle_zellij(id: &str, direction: &Direction) -> bool {
     zellij::focus(id, direction)
 }
@@ -83,6 +94,16 @@ fn get_focused_name(sway: &mut Connection) -> Option<String> {
 
 fn get_tmux_id(name: &str) -> Option<usize> {
     match name.split(" |t$").last() {
+        Some(id) => match id.parse::<usize>() {
+            Ok(id) => Some(id),
+            Err(_) => None,
+        },
+        None => None,
+    }
+}
+
+fn get_wezterm_id(name: &str) -> Option<usize> {
+    match name.split(" |w$").last() {
         Some(id) => match id.parse::<usize>() {
             Ok(id) => Some(id),
             Err(_) => None,
