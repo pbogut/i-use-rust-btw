@@ -11,5 +11,6 @@ members = [
   "tmux-kill-idle-sessions",
   "tmux-session-name",
   "wezterm-project",
+  "wezterm-status",
   "zellij-session-name"
 ]
