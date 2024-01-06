@@ -1,5 +1,9 @@
 use clap::{arg, value_parser, Command};
-use i3_focus::{nvim, tmux, wezterm, zellij, Direction};
+use i3_focus::{
+    nvim, tmux,
+    wezterm::{self, WezTermId},
+    zellij, Direction,
+};
 use i3_ipc::{Connect, I3Stream, I3};
 use i3ipc_types::reply;
 use std::io;
@@ -32,8 +36,8 @@ fn main() -> io::Result<()> {
             }
 
             let wezterm_id = get_wezterm_id(&name);
-            if wezterm_id.is_some() {
-                if handle_wezterm(wezterm_id.unwrap_or_default(), direction) {
+            if let Some(wezterm_id) = wezterm_id {
+                if handle_wezterm(&wezterm_id, direction) {
                     return Ok(());
                 }
             }
@@ -73,8 +77,8 @@ fn handle_tmux(id: usize, direction: &Direction) {
     tmux::focus(id, direction);
 }
 
-fn handle_wezterm(id: usize, direction: &Direction) -> bool {
-    wezterm::focus(id, direction)
+fn handle_wezterm(wezterm_id: &WezTermId, direction: &Direction) -> bool {
+    wezterm::focus(wezterm_id, direction)
 }
 
 fn handle_zellij(id: &str, direction: &Direction) -> bool {
@@ -105,12 +109,15 @@ fn get_tmux_id(name: &str) -> Option<usize> {
     }
 }
 
-fn get_wezterm_id(name: &str) -> Option<usize> {
+fn get_wezterm_id(name: &str) -> Option<WezTermId> {
     match name.split(" |w$").last() {
-        Some(id) => match id.parse::<usize>() {
-            Ok(id) => Some(id),
-            Err(_) => None,
-        },
+        Some(pid_and_pane_id) => {
+            let mut parts = pid_and_pane_id.splitn(2, ':');
+            let pid = parts.next()?.parse::<usize>().ok()?;
+            let pane_id = parts.next()?.parse::<usize>().ok()?;
+
+            Some(WezTermId { pid, pane_id })
+        }
         None => None,
     }
 }

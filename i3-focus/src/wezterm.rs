@@ -19,10 +19,25 @@ impl Direction {
     }
 }
 
-pub fn focus(id: usize, direction: &Direction) -> bool {
+pub struct WezTermId {
+    pub pid: usize,
+    pub pane_id: usize,
+}
+
+impl WezTermId {
+    pub fn socket(&self) -> String {
+        let socket = std::env::var("XDG_RUNTIME_DIR").unwrap_or("/tmp".into());
+        format!("{socket}/wezterm/gui-sock-{}", self.pid)
+    }
+}
+
+pub fn focus(wezterm_id: &WezTermId, direction: &Direction) -> bool {
+    let id = wezterm_id.pane_id;
     let pane = cmd(
-        "wezterm",
+        "env",
         &[
+            &format!("WEZTERM_UNIX_SOCKET={}", wezterm_id.socket()),
+            "wezterm",
             "cli",
             "get-pane-direction",
             direction.wezterm(),
