@@ -20,8 +20,8 @@ struct Sessions {
 
 impl Sessions {
     fn session_file_path(&self) -> String {
-        let temp = std::env::var("TMPDIR").unwrap_or("/tmp".into());
-        format!("{}/wezterm_sessions.json", temp)
+        let dir = std::env::var("XDG_RUNTIME_DIR").unwrap_or("/tmp".into());
+        format!("{}/wezterm_sessions.json", dir)
     }
 
     fn save(&self) -> std::io::Result<()> {
@@ -42,10 +42,20 @@ impl Sessions {
 
         if sessions.is_empty() {
             let shell = std::env::var("SHELL").expect("Can not get shell");
-            let command = format!("while :; do clear; nvim; echo '> start nvim >'; read; done",);
+            let command =
+                format!("while :; do clear; nvim; echo '[enter] nvim\n[ctr+c] quit'; read; done",);
+
+            let args: Vec<String> = env::args().collect();
+            let mut project = "";
+            if args.len() > 2 {
+                project = &args[2];
+            }
+
             let pid = cmdpid(
-                "wezterm",
+                "env",
                 &[
+                    &format!("WEZTERM_PROJECT={project}"),
+                    "wezterm",
                     "start",
                     "--always-new-process",
                     "--cwd",
@@ -130,8 +140,8 @@ fn get_client_pids() -> Vec<usize> {
 }
 
 fn get_sessions() -> Sessions {
-    let temp = std::env::var("TMPDIR").unwrap_or("/tmp".into());
-    let file_path = format!("{}/wezterm_sessions.json", temp);
+    let dir = std::env::var("XDG_RUNTIME_DIR").unwrap_or("/tmp".into());
+    let file_path = format!("{}/wezterm_sessions.json", dir);
 
     let json_string = std::fs::read_to_string(file_path).unwrap_or_else(|_| String::from("[]"));
 
