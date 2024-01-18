@@ -1,3 +1,8 @@
+enum Status {
+    Right,
+    Title,
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let cwd = std::env::current_dir()
@@ -9,6 +14,14 @@ fn main() {
     let path = match args.get(1) {
         Some(path) => path,
         None => &cwd,
+    };
+    let status_type = match args.get(2) {
+        Some(arg) => match arg.as_str() {
+            "--right" => Status::Right,
+            "--title" => Status::Title,
+            _ => Status::Right,
+        },
+        None => Status::Right,
     };
 
     let abs_path = cmd_out("git", &["-C", &path, "rev-parse", "--absolute-git-dir"]);
@@ -30,10 +43,19 @@ fn main() {
     };
 
     let base_name = path.split("/").last().unwrap();
-    if branch_name != "" {
-        println!("{}", format!(" {}   {}", base_name, branch_name));
-    } else {
-        println!("{}", format!(" {}", base_name));
+    match status_type {
+        Status::Right => {
+            if branch_name != "" {
+                println!("{}", format!(" {}   {}", base_name, branch_name));
+            } else {
+                println!("{}", format!(" {}", base_name));
+            }
+        }
+        Status::Title => {
+            if branch_name != "" {
+                println!("{}", format!("{}  {}", base_name, branch_name));
+            }
+        }
     }
 }
 
