@@ -141,6 +141,9 @@ fn collect_focused<'a>(node: &'a Node, mut r: Vec<&'a Node>) -> Vec<&'a Node> {
     for n in &node.nodes {
         r = collect_focused(n, r);
     }
+    for n in &node.floating_nodes {
+        r = collect_focused(n, r);
+    }
     r
 }
 
