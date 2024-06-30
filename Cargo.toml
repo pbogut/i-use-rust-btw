@@ -13,4 +13,4 @@ members = [
   "wezterm-project",
   "wezterm-status",
   "zellij-session-name"
-]
+, "nvim-lsp-log"]
