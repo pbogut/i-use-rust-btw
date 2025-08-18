@@ -97,7 +97,7 @@ fn get_focused_name(sway: &mut Connection) -> Option<String> {
 }
 
 fn get_tmux_id(name: &str) -> Option<usize> {
-    match name.split(" |t$").last() {
+    match name.splitn(2, " |t$").nth(1) {
         Some(id) => match id.parse::<usize>() {
             Ok(id) => Some(id),
             Err(_) => None,
@@ -107,7 +107,7 @@ fn get_tmux_id(name: &str) -> Option<usize> {
 }
 
 fn get_wezterm_id(name: &str) -> Option<WezTermId> {
-    match name.split(" |w$").last() {
+    match name.split(" |w$").nth(1) {
         Some(pid_and_pane_id) => {
             let mut parts = pid_and_pane_id.splitn(2, ':');
             let pid = parts.next()?.parse::<usize>().ok()?;
