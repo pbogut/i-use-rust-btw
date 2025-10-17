@@ -2,6 +2,7 @@
 members = [
   "git-new",
   "git-clone-bare",
+  "hypr-focus",
   "i3-focus",
   "i3-prop",
   "nvru",
