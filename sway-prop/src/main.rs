@@ -38,7 +38,7 @@ fn main() -> Fallible<()> {
 
     let mut sway = Connection::new()?;
 
-    get_focused_node(&mut sway).map_or((), |node| {
+    let _ = get_focused_node(&mut sway).map_or((), |node| {
         display_node(
             &node,
             print_props,

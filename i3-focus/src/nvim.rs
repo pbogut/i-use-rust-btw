@@ -80,6 +80,7 @@ fn cmd(cmd: &str, args: &[&str]) {
 
 enum Event {}
 
+#[allow(unused)]
 struct NeovimHandler(mpsc::Sender<Event>);
 
 impl Handler for NeovimHandler {

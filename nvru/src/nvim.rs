@@ -4,6 +4,7 @@ use std::sync::mpsc;
 
 enum Event {}
 
+#[allow(unused)]
 struct NeovimHandler(mpsc::Sender<Event>);
 
 impl Handler for NeovimHandler {

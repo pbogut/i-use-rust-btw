@@ -29,7 +29,7 @@ fn main() -> io::Result<()> {
 
     let print_props = !print_title && !print_class && !print_icls;
 
-    get_focused_node(&mut i3).map_or((), |node| {
+    let _ = get_focused_node(&mut i3).map_or((), |node| {
         display_node(&node, print_props, print_title, print_class, print_icls);
     });
 
