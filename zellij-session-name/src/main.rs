@@ -1,9 +1,6 @@
-use crypto::digest::Digest;
-use crypto::sha1::Sha1;
+use sha1::{Digest, Sha1};
 
 fn main() {
-    let mut hasher = Sha1::new();
-
     let args: Vec<String> = std::env::args().collect();
     let cwd = std::env::current_dir()
         .unwrap()
@@ -16,8 +13,12 @@ fn main() {
         None => &cwd,
     };
 
-    hasher.input_str(path);
-    let result = hasher.result_str().chars().take(8).collect::<String>();
+    let mut hasher = Sha1::new();
+    hasher.update(path.as_bytes());
+    let result = hex::encode(hasher.finalize())
+        .chars()
+        .take(8)
+        .collect::<String>();
 
     let abs_path = cmd_out("git", &["-C", &path, "rev-parse", "--absolute-git-dir"]);
     let top_path = cmd_out("git", &["-C", &path, "rev-parse", "--show-toplevel"]);
