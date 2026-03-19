@@ -530,6 +530,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "niri-start-maximized"
+version = "0.1.0"
+dependencies = [
+ "niri-ipc",
+]
+
+[[package]]
 name = "notify"
 version = "6.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

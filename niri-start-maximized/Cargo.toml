@@ -1,0 +1,7 @@
+[package]
+name = "niri-start-maximized"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+niri-ipc = "25.11.0"

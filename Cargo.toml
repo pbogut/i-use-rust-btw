@@ -15,5 +15,7 @@ members = [
   "tmux-session-name",
   "wezterm-project",
   "wezterm-status",
-  "zellij-session-name"
-, "nvim-lsp-log"]
+  "zellij-session-name",
+  "nvim-lsp-log",
+  "niri-start-maximized",
+]
