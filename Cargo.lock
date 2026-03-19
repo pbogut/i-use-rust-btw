@@ -356,6 +356,7 @@ dependencies = [
  "i3ipc-types",
  "libc",
  "neovim-lib",
+ "rmp",
 ]
 
 [[package]]
@@ -571,6 +572,7 @@ dependencies = [
  "clap",
  "libc",
  "neovim-lib",
+ "rmp",
 ]
 
 [[package]]
