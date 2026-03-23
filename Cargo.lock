@@ -537,6 +537,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "niri-named-workspace"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "niri-ipc",
+]
+
+[[package]]
 name = "niri-prop"
 version = "0.1.0"
 dependencies = [

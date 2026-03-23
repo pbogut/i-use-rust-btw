@@ -20,4 +20,5 @@ members = [
   "nvim-lsp-log",
   "niri-layout-czar",
   "niri-prop",
+  "niri-named-workspace",
 ]
