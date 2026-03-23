@@ -18,6 +18,6 @@ members = [
   "wezterm-status",
   "zellij-session-name",
   "nvim-lsp-log",
-  "niri-start-maximized",
+  "niri-layout-czar",
   "niri-prop",
 ]
