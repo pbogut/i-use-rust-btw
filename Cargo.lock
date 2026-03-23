@@ -530,6 +530,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "niri-prop"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "niri-ipc",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "niri-start-maximized"
 version = "0.1.0"
 dependencies = [

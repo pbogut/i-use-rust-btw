@@ -19,4 +19,5 @@ members = [
   "zellij-session-name",
   "nvim-lsp-log",
   "niri-start-maximized",
+  "niri-prop",
 ]
