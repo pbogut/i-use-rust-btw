@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 clap = "4.2.7"
-niri-ipc = "25.11.0"
+niri-ipc = "26.4.0"
 serde = "1.0.171"
 serde_json = "1.0.100"
