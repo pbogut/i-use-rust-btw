@@ -1,5 +1,6 @@
 use clap::{builder::PossibleValue, ValueEnum};
 
+pub mod herdr;
 pub mod nvim;
 pub mod tmux;
 pub mod wezterm;

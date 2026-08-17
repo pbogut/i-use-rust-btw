@@ -357,6 +357,7 @@ dependencies = [
  "libc",
  "neovim-lib",
  "rmp",
+ "serde_json",
 ]
 
 [[package]]

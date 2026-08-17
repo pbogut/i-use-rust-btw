@@ -1,15 +1,15 @@
 use clap::{arg, value_parser, Command};
 use i3_focus::{
-    nvim, tmux,
+    herdr, nvim, tmux,
     wezterm::{self, WezTermId},
     zellij, Direction,
 };
 use niri_ipc::socket::Socket;
-use niri_ipc::{Action, Request, Response};
+use niri_ipc::{Action, Request, Response, Window};
 
 fn cli() -> Command {
     Command::new("niri-focus")
-        .about("Change focus between niri / tmux / vim")
+        .about("Change focus between niri / terminal multiplexers / vim")
         .args(vec![
             arg!(<DIRECTION> "Focus direction").value_parser(value_parser!(Direction)),
             arg!(--"skip-nvim" "Skip nvim check"),
@@ -23,34 +23,41 @@ fn main() {
         .get_one::<Direction>("DIRECTION")
         .expect("Direction has to be provided");
 
-    match get_focused_name() {
-        Some(name) => {
+    match get_focused_window() {
+        Some(window) => {
+            let name = window.title.as_deref().unwrap_or_default();
             let skip_vim = matches.get_flag("skip-nvim");
-            let nvim_id = get_nvim_id(&name);
+            let nvim_id = get_nvim_id(name);
             if nvim_id.is_some() && !skip_vim {
                 handle_nvim(nvim_id.unwrap_or_default(), direction);
                 return;
             }
 
-            let wezterm_id = get_wezterm_id(&name);
+            let wezterm_id = get_wezterm_id(name);
             if let Some(wezterm_id) = wezterm_id {
                 if handle_wezterm(&wezterm_id, direction) {
                     return;
                 }
             }
 
-            let tmux_id = get_tmux_id(&name);
+            let tmux_id = get_tmux_id(name);
             let tmux_edge = tmux_id.map_or(false, |id| tmux::is_tmux_edge(id, direction));
             if tmux_id.is_some() && !tmux_edge {
                 handle_tmux(tmux_id.unwrap_or_default(), direction);
                 return;
             }
 
-            let zellij_id = get_zellij_id(&name);
+            let zellij_id = get_zellij_id(name);
             if zellij_id.is_some() {
                 if handle_zellij(&zellij_id.unwrap_or_default(), direction) {
                     return;
                 }
+            }
+
+            if is_herdr_window(window.app_id.as_deref(), window.title.as_deref())
+                && herdr::focus(direction)
+            {
+                return;
             }
 
             handle_niri(direction);
@@ -88,13 +95,17 @@ fn handle_zellij(id: &str, direction: &Direction) -> bool {
     zellij::focus(id, direction)
 }
 
-fn get_focused_name() -> Option<String> {
+fn get_focused_window() -> Option<Window> {
     let mut socket = Socket::connect().ok()?;
     let reply = socket.send(Request::FocusedWindow).ok()?;
     match reply {
-        Ok(Response::FocusedWindow(Some(window))) => window.title,
+        Ok(Response::FocusedWindow(window)) => window,
         _ => None,
     }
+}
+
+fn is_herdr_window(app_id: Option<&str>, title: Option<&str>) -> bool {
+    app_id == Some("Alacritty.herdr") || title.is_some_and(|title| title.ends_with(" |h$"))
 }
 
 fn get_tmux_id(name: &str) -> Option<usize> {
@@ -138,5 +149,28 @@ fn get_nvim_id(name: &str) -> Option<usize> {
             Err(_) => None,
         },
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{get_nvim_id, is_herdr_window};
+
+    #[test]
+    fn detects_herdr_by_app_id_or_title_marker() {
+        assert!(is_herdr_window(Some("Alacritty.herdr"), Some("zsh")));
+        assert!(is_herdr_window(
+            Some("Alacritty"),
+            Some("zsh | project |h$")
+        ));
+        assert!(!is_herdr_window(Some("Alacritty"), Some("zsh")));
+    }
+
+    #[test]
+    fn detects_nvim_inside_herdr_title() {
+        assert_eq!(
+            get_nvim_id("pbogut@redeye:nvim:123:~/project | project |h$"),
+            Some(123)
+        );
     }
 }
