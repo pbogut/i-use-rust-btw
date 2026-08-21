@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 fn main() -> Result<()> {
     let full_path = get_full_path();
+    let (name, org, domain) = get_args();
 
     println!("New repository path: {}", full_path);
 
@@ -16,6 +17,15 @@ fn main() -> Result<()> {
     cmd("git", &["init", "--bare", ".bare"]);
     File::create(".git")?.write_all(b"gitdir: ./.bare")?;
     cmd("git", &["worktree", "add", "master", "--orphan"]);
+    cmd(
+        "git",
+        &[
+            "remote",
+            "add",
+            "origin",
+            &format!("git@{domain}:{org}/{name}.git"),
+        ],
+    );
     cmd(
         "git",
         &[
