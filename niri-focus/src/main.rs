@@ -27,10 +27,11 @@ fn main() {
         Some(window) => {
             let name = window.title.as_deref().unwrap_or_default();
             let skip_vim = matches.get_flag("skip-nvim");
-            let nvim_id = get_nvim_id(name);
-            if nvim_id.is_some() && !skip_vim {
-                handle_nvim(nvim_id.unwrap_or_default(), direction);
-                return;
+            if !skip_vim {
+                if let Some(nvim_id) = get_nvim_id(name) {
+                    handle_nvim(nvim_id, direction);
+                    return;
+                }
             }
 
             let wezterm_id = get_wezterm_id(name);
@@ -79,7 +80,7 @@ fn handle_niri(direction: &Direction) {
         .expect("Failed to send action to niri");
 }
 
-fn handle_nvim(id: usize, direction: &Direction) {
+fn handle_nvim(id: &str, direction: &Direction) {
     nvim::focus(id, direction);
 }
 
@@ -141,15 +142,10 @@ fn get_zellij_id(name: &str) -> Option<String> {
     }
 }
 
-fn get_nvim_id(name: &str) -> Option<usize> {
-    let mut p = name.split(':');
-    match (p.nth(1), p.next()) {
-        (Some("nvim"), Some(id)) => match id.parse() {
-            Ok(id) => Some(id),
-            Err(_) => None,
-        },
-        _ => None,
-    }
+fn get_nvim_id(name: &str) -> Option<&str> {
+    let (_, suffix) = name.split_once(":nvim:")?;
+    let (id, _) = suffix.split_once(':')?;
+    (!id.is_empty()).then_some(id)
 }
 
 #[cfg(test)]
@@ -170,7 +166,17 @@ mod tests {
     fn detects_nvim_inside_herdr_title() {
         assert_eq!(
             get_nvim_id("pbogut@redeye:nvim:123:~/project | project |h$"),
-            Some(123)
+            Some("123")
         );
+        assert_eq!(
+            get_nvim_id("pbogut@redeye:nvim:herdr-wX:~/project | project |h$"),
+            Some("herdr-wX")
+        );
+    }
+
+    #[test]
+    fn rejects_missing_nvim_id_delimiters() {
+        assert_eq!(get_nvim_id("pbogut@redeye:nvim::~/project"), None);
+        assert_eq!(get_nvim_id("pbogut@redeye:nvim:~/project"), None);
     }
 }

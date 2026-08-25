@@ -14,13 +14,13 @@ impl Direction {
     }
 }
 
-pub fn focus(id: usize, direction: &Direction) {
-    if let Err(_) = switch_window(id, direction) {
+pub fn focus(id: impl std::fmt::Display, direction: &Direction) {
+    if let Err(_) = switch_window(&id.to_string(), direction) {
         cmd(&current_exe(), &["--skip-nvim", &direction.to_string()]);
     };
 }
 
-fn switch_window(id: usize, direction: &Direction) -> Result<(), &str> {
+fn switch_window(id: &str, direction: &Direction) -> Result<(), &'static str> {
     let user_id = unsafe { libc::getuid() };
     let servername = format!("/run/user/{}/nvim.{}.0", user_id, id);
 
