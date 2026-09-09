@@ -28,7 +28,7 @@ fn main() {
             let name = window.title.as_deref().unwrap_or_default();
             let skip_vim = matches.get_flag("skip-nvim");
             if !skip_vim {
-                if let Some(nvim_id) = get_nvim_id(name) {
+                if let Some(nvim_id) = nvim::id_from_title(name) {
                     handle_nvim(nvim_id, direction);
                     return;
                 }
@@ -142,15 +142,9 @@ fn get_zellij_id(name: &str) -> Option<String> {
     }
 }
 
-fn get_nvim_id(name: &str) -> Option<&str> {
-    let (_, suffix) = name.split_once(":nvim:")?;
-    let (id, _) = suffix.split_once(':')?;
-    (!id.is_empty()).then_some(id)
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{get_nvim_id, is_herdr_window};
+    use super::is_herdr_window;
 
     #[test]
     fn detects_herdr_by_app_id_or_title_marker() {
@@ -160,23 +154,5 @@ mod tests {
             Some("zsh | project |h$")
         ));
         assert!(!is_herdr_window(Some("Alacritty"), Some("zsh")));
-    }
-
-    #[test]
-    fn detects_nvim_inside_herdr_title() {
-        assert_eq!(
-            get_nvim_id("pbogut@redeye:nvim:123:~/project | project |h$"),
-            Some("123")
-        );
-        assert_eq!(
-            get_nvim_id("pbogut@redeye:nvim:herdr-wX:~/project | project |h$"),
-            Some("herdr-wX")
-        );
-    }
-
-    #[test]
-    fn rejects_missing_nvim_id_delimiters() {
-        assert_eq!(get_nvim_id("pbogut@redeye:nvim::~/project"), None);
-        assert_eq!(get_nvim_id("pbogut@redeye:nvim:~/project"), None);
     }
 }

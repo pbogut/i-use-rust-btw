@@ -26,7 +26,7 @@ fn main() {
     match get_focused_name() {
         Some(name) => {
             let skip_vim = matches.get_flag("skip-nvim");
-            let nvim_id = get_nvim_id(&name);
+            let nvim_id = nvim::id_from_title(&name);
             if nvim_id.is_some() && !skip_vim {
                 handle_nvim(nvim_id.unwrap_or_default(), direction);
                 return;
@@ -69,7 +69,7 @@ fn handle_hypr(direction: &Direction) {
     Dispatch::call(DispatchType::MoveFocus(hypr_dir)).unwrap();
 }
 
-fn handle_nvim(id: usize, direction: &Direction) {
+fn handle_nvim(id: &str, direction: &Direction) {
     nvim::focus(id, direction);
 }
 
@@ -128,16 +128,5 @@ fn get_zellij_id(name: &str) -> Option<String> {
         Some(name[start + 1..end].to_string())
     } else {
         None
-    }
-}
-
-fn get_nvim_id(name: &str) -> Option<usize> {
-    let mut p = name.split(':');
-    match (p.nth(1), p.next()) {
-        (Some("nvim"), Some(id)) => match id.parse() {
-            Ok(id) => Some(id),
-            Err(_) => None,
-        },
-        _ => None,
     }
 }
