@@ -1,5 +1,6 @@
 use crate::Direction;
 use neovim_lib::{Handler, Integer, Neovim, NeovimApi, RequestHandler, Session, Value};
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 
@@ -22,7 +23,7 @@ pub fn id_from_title(name: &str) -> Option<&str> {
 
 pub fn focus(id: impl std::fmt::Display, direction: &Direction) {
     if let Err(_) = switch_window(&id.to_string(), direction) {
-        cmd(&current_exe(), &["--skip-nvim", &direction.to_string()]);
+        cmd(&current_exe(), &fallback_args(std::env::args_os().skip(1)));
     };
 }
 
@@ -111,7 +112,13 @@ fn current_exe() -> String {
         .to_string()
 }
 
-fn cmd(cmd: &str, args: &[&str]) {
+fn fallback_args(args: impl IntoIterator<Item = OsString>) -> Vec<OsString> {
+    std::iter::once(OsString::from("--skip-nvim"))
+        .chain(args)
+        .collect()
+}
+
+fn cmd(cmd: &str, args: &[OsString]) {
     std::process::Command::new(cmd).args(args).status().unwrap();
 }
 
@@ -136,8 +143,24 @@ impl RequestHandler for NeovimHandler {
 
 #[cfg(test)]
 mod tests {
-    use super::{id_from_title, socket_path};
+    use super::{fallback_args, id_from_title, socket_path};
+    use std::ffi::OsString;
     use std::path::{Path, PathBuf};
+
+    #[test]
+    fn fallback_preserves_direction_and_switching_flags() {
+        for args in [
+            vec!["down"],
+            vec!["down", "--switch-workspace"],
+            vec!["--switch-monitor", "left"],
+            vec!["up", "--switch-monitor", "--switch-workspace"],
+        ] {
+            let forwarded = fallback_args(args.iter().map(OsString::from));
+            let mut expected = vec![OsString::from("--skip-nvim")];
+            expected.extend(args.iter().map(OsString::from));
+            assert_eq!(forwarded, expected);
+        }
+    }
 
     #[test]
     fn parses_nvim_ids_with_herdr_suffix() {
