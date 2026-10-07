@@ -13,6 +13,8 @@ fn cli() -> Command {
         .args(vec![
             arg!(<DIRECTION> "Focus direction").value_parser(value_parser!(Direction)),
             arg!(--"skip-nvim" "Skip nvim check"),
+            arg!(--"switch-monitor" "Allow left/right focus to switch monitors at the edge"),
+            arg!(--"switch-workspace" "Allow up/down focus to switch workspaces at the edge"),
         ])
 }
 
@@ -22,6 +24,8 @@ fn main() {
     let direction = matches
         .get_one::<Direction>("DIRECTION")
         .expect("Direction has to be provided");
+    let switch_monitor = matches.get_flag("switch-monitor");
+    let switch_workspace = matches.get_flag("switch-workspace");
 
     match get_focused_window() {
         Some(window) => {
@@ -61,18 +65,22 @@ fn main() {
                 return;
             }
 
-            handle_niri(direction);
+            handle_niri(direction, switch_monitor, switch_workspace);
         }
-        None => handle_niri(direction),
+        None => handle_niri(direction, switch_monitor, switch_workspace),
     }
 }
 
-fn handle_niri(direction: &Direction) {
+fn handle_niri(direction: &Direction, switch_monitor: bool, switch_workspace: bool) {
     let action = match direction {
-        Direction::Left => Action::FocusColumnOrMonitorLeft {},
-        Direction::Right => Action::FocusColumnOrMonitorRight {},
-        Direction::Up => Action::FocusWindowOrWorkspaceUp {},
-        Direction::Down => Action::FocusWindowOrWorkspaceDown {},
+        Direction::Left if switch_monitor => Action::FocusColumnOrMonitorLeft {},
+        Direction::Right if switch_monitor => Action::FocusColumnOrMonitorRight {},
+        Direction::Up if switch_workspace => Action::FocusWindowOrWorkspaceUp {},
+        Direction::Down if switch_workspace => Action::FocusWindowOrWorkspaceDown {},
+        Direction::Left => Action::FocusColumnLeft {},
+        Direction::Right => Action::FocusColumnRight {},
+        Direction::Up => Action::FocusWindowUp {},
+        Direction::Down => Action::FocusWindowDown {},
     };
     let mut socket = Socket::connect().expect("Failed to connect to niri socket");
     let _ = socket
