@@ -1,5 +1,5 @@
 use clap::{arg, value_parser, Command};
-use hyprland::dispatch::{Direction as HyprDirection, Dispatch, DispatchType};
+use hyprland::dispatch::{Dispatch, DispatchType};
 use i3_focus::{
     nvim, tmux,
     wezterm::{self, WezTermId},
@@ -60,13 +60,8 @@ fn main() {
 }
 
 fn handle_hypr(direction: &Direction) {
-    let hypr_dir = match direction {
-        Direction::Left => HyprDirection::Left,
-        Direction::Right => HyprDirection::Right,
-        Direction::Up => HyprDirection::Up,
-        Direction::Down => HyprDirection::Down,
-    };
-    Dispatch::call(DispatchType::MoveFocus(hypr_dir)).unwrap();
+    let dispatcher = format!("hl.dsp.focus({{ direction = \"{direction}\" }})");
+    Dispatch::call(DispatchType::Custom(&dispatcher, "")).unwrap();
 }
 
 fn handle_nvim(id: &str, direction: &Direction) {
