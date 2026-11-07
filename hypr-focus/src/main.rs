@@ -13,6 +13,8 @@ fn cli() -> Command {
         .args(vec![
             arg!(<DIRECTION> "Focus direction").value_parser(value_parser!(Direction)),
             arg!(--"skip-nvim" "Skip nvim check"),
+            arg!(--"switch-monitor" "Allow left/right focus to switch monitors at the edge"),
+            arg!(--"switch-workspace" "Allow up/down focus to switch workspaces at the edge"),
         ])
 }
 
@@ -22,6 +24,8 @@ fn main() {
     let direction = matches
         .get_one::<Direction>("DIRECTION")
         .expect("Direction has to be provided");
+    let switch_monitor = matches.get_flag("switch-monitor");
+    let switch_workspace = matches.get_flag("switch-workspace");
 
     match get_focused_name() {
         Some(name) => {
@@ -53,14 +57,67 @@ fn main() {
                 }
             }
 
-            handle_hypr(direction);
+            handle_hypr(direction, switch_monitor, switch_workspace);
         }
-        None => handle_hypr(direction),
+        None => handle_hypr(direction, switch_monitor, switch_workspace),
     }
 }
 
-fn handle_hypr(direction: &Direction) {
-    let dispatcher = format!("hl.dsp.focus({{ direction = \"{direction}\" }})");
+fn handle_hypr(direction: &Direction, switch_monitor: bool, switch_workspace: bool) {
+    let horizontal = matches!(direction, Direction::Left | Direction::Right);
+    let step = match direction {
+        Direction::Left | Direction::Up => -1,
+        Direction::Right | Direction::Down => 1,
+    };
+    // Horizontal scrolling: check column boundaries before layout focus can wrap.
+    let dispatcher = format!(
+        r#"(function()
+    local direction = "{direction}"
+    local horizontal = {horizontal}
+    local step = {step}
+    local window = hl.get_active_window()
+    local workspace = window and window.workspace
+        or hl.get_active_special_workspace() or hl.get_active_workspace()
+    if not workspace then
+        return hl.dsp.no_op()
+    end
+    if workspace.tiled_layout ~= "scrolling" or (window and window.floating) then
+        return hl.dsp.focus({{ direction = direction }})
+    end
+
+    if window then
+        local layout = window.layout
+        if not layout or not layout.column then
+            return hl.dsp.no_op()
+        end
+        if horizontal then
+            local next_column = layout.column.index + step
+            for _, candidate in ipairs(hl.get_workspace_windows(workspace)) do
+                local other = candidate.layout
+                if other and other.column and other.column.index == next_column then
+                    return hl.dsp.layout("focus " .. direction)
+                end
+            end
+        else
+            -- Layout indices are zero-based; column.windows is a Lua array.
+            local next_index = layout.index_in_column + step
+            if next_index >= 0 and next_index < #layout.column.windows then
+                return hl.dsp.layout("focus " .. direction)
+            end
+        end
+    end
+
+    if horizontal and {switch_monitor} then
+        local monitor = hl.get_monitor(direction)
+        if monitor and monitor ~= hl.get_active_monitor() then
+            return hl.dsp.focus({{ monitor = monitor }})
+        end
+    elseif not horizontal and {switch_workspace} then
+        return hl.dsp.focus({{ workspace = step < 0 and "m-1" or "m+1" }})
+    end
+    return hl.dsp.no_op()
+end)()"#
+    );
     Dispatch::call(DispatchType::Custom(&dispatcher, "")).unwrap();
 }
 
