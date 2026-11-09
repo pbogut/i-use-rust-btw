@@ -333,6 +333,7 @@ fn main() {
     loop {
         let event = match read_event() {
             Ok(e) => e,
+            Err(e) if e.kind() == std::io::ErrorKind::InvalidData => continue,
             Err(e) => {
                 eprintln!("Event stream error: {e}");
                 break;
