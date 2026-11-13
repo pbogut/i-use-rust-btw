@@ -1,4 +1,4 @@
-use clap::{arg, value_parser, Command};
+use clap::{arg, builder::PossibleValue, value_parser, Command, ValueEnum};
 use i3_focus::{
     herdr, nvim, tmux,
     wezterm::{self, WezTermId},
@@ -7,11 +7,46 @@ use i3_focus::{
 use niri_ipc::socket::Socket;
 use niri_ipc::{Action, Request, Response, Window};
 
+#[derive(Clone)]
+enum FocusAction {
+    Direction(Direction),
+    NextWorkspace,
+    PrevWorkspace,
+}
+
+impl ValueEnum for FocusAction {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[
+            Self::Direction(Direction::Left),
+            Self::Direction(Direction::Right),
+            Self::Direction(Direction::Up),
+            Self::Direction(Direction::Down),
+            Self::NextWorkspace,
+            Self::PrevWorkspace,
+        ]
+    }
+
+    fn to_possible_value(&self) -> Option<PossibleValue> {
+        match self {
+            Self::Direction(direction) => direction.to_possible_value(),
+            Self::NextWorkspace => Some(
+                PossibleValue::new("next-workspace")
+                    .help("Focus the workspace below on the focused monitor"),
+            ),
+            Self::PrevWorkspace => Some(
+                PossibleValue::new("prev-workspace")
+                    .help("Focus the workspace above on the focused monitor"),
+            ),
+        }
+    }
+}
+
 fn cli() -> Command {
     Command::new("niri-focus")
         .about("Change focus between niri / terminal multiplexers / vim")
         .args(vec![
-            arg!(<DIRECTION> "Focus direction").value_parser(value_parser!(Direction)),
+            arg!(<DIRECTION> "Focus direction or workspace action")
+                .value_parser(value_parser!(FocusAction)),
             arg!(--"skip-nvim" "Skip nvim check"),
             arg!(--"switch-monitor" "Allow left/right focus to switch monitors at the edge"),
             arg!(--"switch-workspace" "Allow up/down focus to switch workspaces at the edge"),
@@ -21,9 +56,20 @@ fn cli() -> Command {
 fn main() {
     let matches = cli().get_matches();
 
-    let direction = matches
-        .get_one::<Direction>("DIRECTION")
+    let action = matches
+        .get_one::<FocusAction>("DIRECTION")
         .expect("Direction has to be provided");
+    let direction = match action {
+        FocusAction::Direction(direction) => direction,
+        FocusAction::NextWorkspace => {
+            send_action(Action::FocusWorkspaceDown {});
+            return;
+        }
+        FocusAction::PrevWorkspace => {
+            send_action(Action::FocusWorkspaceUp {});
+            return;
+        }
+    };
     let switch_monitor = matches.get_flag("switch-monitor");
     let switch_workspace = matches.get_flag("switch-workspace");
 
@@ -82,6 +128,10 @@ fn handle_niri(direction: &Direction, switch_monitor: bool, switch_workspace: bo
         Direction::Up => Action::FocusWindowUp {},
         Direction::Down => Action::FocusWindowDown {},
     };
+    send_action(action);
+}
+
+fn send_action(action: Action) {
     let mut socket = Socket::connect().expect("Failed to connect to niri socket");
     let _ = socket
         .send(Request::Action(action))
