@@ -1,3 +1,5 @@
+mod herdr_app;
+
 use clap::{arg, builder::PossibleValue, value_parser, Command, ValueEnum};
 use i3_focus::{
     herdr, nvim, tmux,
@@ -73,10 +75,15 @@ fn main() -> Result<(), String> {
     let switch_monitor = matches.get_flag("switch-monitor");
     let switch_workspace = matches.get_flag("switch-workspace");
 
+    let skip_vim = matches.get_flag("skip-nvim");
     match get_focused_window() {
+        Some(window) if window.app_id.as_deref() == Some("herdr-app") => {
+            if herdr_app::focus(direction, skip_vim) {
+                return Ok(());
+            }
+        }
         Some(window) => {
             let name = window.title.as_deref().unwrap_or_default();
-            let skip_vim = matches.get_flag("skip-nvim");
             if !skip_vim {
                 if let Some(nvim_id) = nvim::id_from_title(name) {
                     handle_nvim(nvim_id, direction);
@@ -110,21 +117,15 @@ fn main() -> Result<(), String> {
             {
                 return Ok(());
             }
-
-            handle_niri(
-                direction,
-                switch_monitor,
-                switch_workspace,
-                skip_empty_named_workspaces,
-            )
         }
-        None => handle_niri(
-            direction,
-            switch_monitor,
-            switch_workspace,
-            skip_empty_named_workspaces,
-        ),
+        None => {}
     }
+    handle_niri(
+        direction,
+        switch_monitor,
+        switch_workspace,
+        skip_empty_named_workspaces,
+    )
 }
 
 fn handle_niri(

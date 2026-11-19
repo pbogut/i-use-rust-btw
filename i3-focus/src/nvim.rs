@@ -54,7 +54,7 @@ fn socket_path(
     }
 }
 
-fn switch_window(id: &str, direction: &Direction) -> Result<(), &'static str> {
+pub fn switch_window(id: &str, direction: &Direction) -> Result<(), &'static str> {
     let user_id = unsafe { libc::getuid() };
     let runtime_dir = std::env::var_os("XDG_RUNTIME_DIR")
         .filter(|dir| !dir.is_empty())
@@ -66,7 +66,7 @@ fn switch_window(id: &str, direction: &Direction) -> Result<(), &'static str> {
         return Err("Socket don't exists");
     }
 
-    let mut nv = client(&servername);
+    let mut nv = client(&servername)?;
     let old_winid = get_window_id(&mut nv);
     nv.command(&format!("wincmd {}", direction.vim()))
         .unwrap_or(());
@@ -81,13 +81,14 @@ fn switch_window(id: &str, direction: &Direction) -> Result<(), &'static str> {
     }
 }
 
-fn client(address: &Path) -> Neovim {
-    let mut session = Session::new_unix_socket(address).unwrap();
+fn client(address: &Path) -> Result<Neovim, &'static str> {
+    let mut session =
+        Session::new_unix_socket(address).map_err(|_| "Could not connect to Neovim")?;
 
     let (sender, _) = mpsc::channel();
     session.start_event_loop_handler(NeovimHandler(sender));
 
-    Neovim::new(session)
+    Ok(Neovim::new(session))
 }
 
 fn get_window_id(nv: &mut Neovim) -> Option<u64> {

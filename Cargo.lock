@@ -518,6 +518,7 @@ dependencies = [
  "clap",
  "i3-focus",
  "niri-ipc",
+ "serde_json",
 ]
 
 [[package]]

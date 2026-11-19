@@ -9,3 +9,4 @@ edition = "2021"
 clap = "4.3.11"
 i3-focus = { path = "../i3-focus" }
 niri-ipc = "26.4.0"
+serde_json = "1"
